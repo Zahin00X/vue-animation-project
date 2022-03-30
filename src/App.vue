@@ -1,13 +1,31 @@
 <template>
   <div class="container">
+    <users-list></users-list>
+  </div>
+  <div class="container">
     <div class="block" :class="{animate : animatedBlock}"></div>
     <button @click="animateBlock">Animate</button>
   </div>
   <div class='container'>
-    <transition name="para">
+    <transition name="para" 
+      :css="false"
+      @before-enter="beforeEnter" 
+      @enter="enter"   
+      @after-enter="afterEnter"
+      @before-leave="beforeLeave"
+      @leave="leave"
+      @after-leave="afterLeave"
+      @enter-cancelled="enterCancelled"
+      @leave-cancelled="leaveCancelled">
     <p v-if="paraIsVisible">This is only sometimes visible...</p>
     </transition>
     <button @click="toggleParagraph">Toggle Paragraph</button>
+  </div>
+  <div class="container">
+   <transition name="fade-button" mode-in="out-in">
+   <button @click="showUser" v-if="!usersAreVisible">Show Users</button>
+   <button @click="hideUser" v-else>Hide Users</button>
+   </transition> 
   </div>
   <base-modal @close="hideDialog" :open="dialogIsVisible">
     <p>This is a test dialog!</p>
@@ -19,15 +37,93 @@
 </template>  
 
 <script>
+import UsersList from './components/UsersList.vue'
+
 export default {
+  components:{
+    UsersList
+  },
   data() {
     return { 
       dialogIsVisible: false,
       animatedBlock : false,
-      paraIsVisible : false  
+      paraIsVisible : false,
+      usersAreVisible : false,
+      enterInterval: null,
+      leaveInterval: null 
     };
   },
   methods: {
+    enterCancelled(el)
+    {
+      console.log(el);
+      clearInterval(this.enterInterval);
+    },
+    leaveCancelled(el)
+    {
+      console.log(el);
+      clearInterval(this.leaveInterval);
+    },
+    beforeEnter(el)
+    {
+      console.log("Enter transition will happen now");
+      console.log(el);
+      el.style.opacity = 0;
+    },
+    enter(el, done)
+    {
+      console.log("enter");
+      console.log(el);
+      let round = 1;
+      this.enterInterval = setInterval(()=>{
+        el.style.opacity = round * 0.01;
+        round++;
+        if(round > 100)
+        {
+          clearInterval(this.enterInterval);
+          done();
+        }
+      }, 20)
+    },
+    afterEnter(el)
+    {
+      console.log("After Enter");
+      console.log(el);
+    },
+    beforeLeave(el)
+    {
+      console.log("Leave transition will happen now");
+      console.log(el);
+      el.style.opacity = 1;
+    },
+    leave(el, done)
+    {
+      console.log("leave");
+      console.log(el);
+      let round = 1;
+      this.leaveInterval = setInterval(()=>{
+        el.style.opacity = 1 - round * 0.01;
+        round++;
+        if(round > 100)
+        {
+          clearInterval(this.leaveInterval);
+          done();
+        }
+      }, 20)
+    },
+    afterLeave(el)
+    {
+      console.log("afterLeave");
+      console.log(el);
+    },
+    showUser()
+    {
+      this.usersAreVisible = true;
+    },
+    hideUser()
+    {
+      this.usersAreVisible = false;
+    },
     toggleParagraph()
     {
       this.paraIsVisible = !this.paraIsVisible;
@@ -107,9 +203,9 @@ button:active {
   transform: translateY(0)
 } */
 
-.para-enter-active{
+/* .para-enter-active{
   animation: slide-scale 0.3s ease-out;
-}
+} */
 
 /* for disappearance animation */
 
@@ -127,8 +223,26 @@ button:active {
   transform: translateY(30px);
 } */
 
-.para-leave-active {
+/* .para-leave-active {
   animation: slide-scale 0.3s ease-in;
+} */
+
+.fade-button-enter-from, 
+.fade-button-leave-to {
+  opacity : 0;
+}
+
+.fade-button-enter-active{
+ transition: opacity 0.3s ease-out;
+}
+
+.fade-button-leave-active{
+ transition: opacity 0.3s ease-in;
+}
+
+.fade-button-enter-to,
+.fade-button-leave-from {
+  opacity : 1;
 }
 
 /* CSS transition classes for the modal dialogue box */
